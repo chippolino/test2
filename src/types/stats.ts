@@ -19,6 +19,7 @@ export interface HourlyStatDto {
 
 export interface StatsChartDto {
   date: string;
+  isToday: boolean;
   hourly_stats: HourlyStatDto[];
   total: number;
 }

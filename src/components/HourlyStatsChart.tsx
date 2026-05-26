@@ -1,67 +1,87 @@
-import { Checkbox, Spin, Tabs, Typography } from 'antd';
-import { useEffect } from 'react';
+import { Checkbox, Spin, Tabs, Tag, Typography } from 'antd';
+import dayjs from 'dayjs';
+import { useEffect, useState } from 'react';
+import { DateFilterForm } from '@/components/DateFilterForm';
 import { HistogramChart } from '@/components/charts/HistogramChart';
 import { LineChart } from '@/components/charts/LineChart';
 import { StatsPageLayout } from '@/components/layout/StatsPageLayout';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { DATE_FORMAT, getDateTagLabel } from '@/utils/dateUtils';
 import { loadHourlyStats, setLogScale } from '@/store/statsSlice';
 
 export function HourlyStatsChart() {
   const dispatch = useAppDispatch();
   const { data, loading, error, logScale } = useAppSelector((state) => state.stats);
+  const [formDate, setFormDate] = useState(() => dayjs());
+
+  const applyDate = (date: dayjs.Dayjs) => {
+    void dispatch(loadHourlyStats(date.format(DATE_FORMAT)));
+  };
 
   useEffect(() => {
-    void dispatch(loadHourlyStats());
+    applyDate(dayjs());
   }, [dispatch]);
 
-  if (loading) {
-    return <Spin size="large" />;
-  }
+  const chartProps = data ? { data: data.hourly_stats, logScale } : null;
 
-  if (error) {
-    return <Typography.Text type="danger">{error}</Typography.Text>;
-  }
-
-  if (!data) {
-    return null;
-  }
-
-  const chartProps = { data: data.hourly_stats, logScale };
-
-  const items = [
-    {
-      key: 'histogram',
-      label: 'Гистограмма',
-      children: <HistogramChart {...chartProps} />,
-    },
-    {
-      key: 'line',
-      label: 'Линейный график',
-      children: <LineChart {...chartProps} />,
-    },
-  ];
+  const items = chartProps
+    ? [
+        {
+          key: 'histogram',
+          label: 'Гистограмма',
+          children: <HistogramChart {...chartProps} />,
+        },
+        {
+          key: 'line',
+          label: 'Линейный график',
+          children: <LineChart {...chartProps} />,
+        },
+      ]
+    : [];
 
   return (
     <StatsPageLayout
       aside={
         <>
-          <Typography.Title level={4} style={{ marginTop: 0 }}>
-            Аномалии за {data.date}
-          </Typography.Title>
-          <Typography.Text type="secondary">Всего: {data.total}</Typography.Text>
+          <DateFilterForm
+            value={formDate}
+            loading={loading}
+            onChange={setFormDate}
+            onApply={applyDate}
+          />
 
-          <div style={{ marginTop: 24 }}>
-            <Checkbox
-              checked={logScale}
-              onChange={(e) => dispatch(setLogScale(e.target.checked))}
-            >
-              Логарифмическая шкала
-            </Checkbox>
-          </div>
+          {data && (
+            <Tag style={{ marginBottom: 16 }}>{getDateTagLabel(data.date)}</Tag>
+          )}
+
+          {data && (
+            <>
+              <Typography.Text type="secondary">Всего: {data.total}</Typography.Text>
+
+              <div style={{ marginTop: 24 }}>
+                <Checkbox
+                  checked={logScale}
+                  onChange={(e) => dispatch(setLogScale(e.target.checked))}
+                >
+                  Логарифмическая шкала
+                </Checkbox>
+              </div>
+            </>
+          )}
+
+          {error && (
+            <Typography.Text type="danger" style={{ display: 'block', marginTop: 16 }}>
+              {error}
+            </Typography.Text>
+          )}
         </>
       }
     >
-      <Tabs items={items} style={{ width: '100%' }} />
+      {loading && !data ? (
+        <Spin size="large" />
+      ) : (
+        data && <Tabs items={items} style={{ width: '100%' }} />
+      )}
     </StatsPageLayout>
   );
 }

@@ -1,10 +1,10 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { getMockHourlyStats } from '@/api/statsApi';
-import type { StatsChartDto } from '@/types/stats';
 import { mapStatsToChartDto } from '@/utils/statsMapper';
 
 interface StatsState {
-  data: StatsChartDto | null;
+  data: ReturnType<typeof mapStatsToChartDto> | null;
+  selectedDate: string | null;
   loading: boolean;
   error: string | null;
   logScale: boolean;
@@ -12,15 +12,19 @@ interface StatsState {
 
 const initialState: StatsState = {
   data: null,
+  selectedDate: null,
   loading: false,
   error: null,
   logScale: false,
 };
 
-export const loadHourlyStats = createAsyncThunk('stats/load', async () => {
-  const response = getMockHourlyStats();
-  return mapStatsToChartDto(response);
-});
+export const loadHourlyStats = createAsyncThunk(
+  'stats/load',
+  async (date: string) => {
+    const response = getMockHourlyStats(date);
+    return mapStatsToChartDto(response);
+  },
+);
 
 const statsSlice = createSlice({
   name: 'stats',
@@ -39,6 +43,7 @@ const statsSlice = createSlice({
       .addCase(loadHourlyStats.fulfilled, (state, action) => {
         state.loading = false;
         state.data = action.payload;
+        state.selectedDate = action.payload.date;
       })
       .addCase(loadHourlyStats.rejected, (state, action) => {
         state.loading = false;
