@@ -21,7 +21,7 @@ const MOCK_BY_DATE: Record<string, StatsApiResponse> = {
     hourly_stats: [
       { hour: 8, anomalous_count: 1 },
       { hour: 14, anomalous_count: 4 },
-      { hour: 20, anomalous_count: 2 },
+      { hour: 20, anomalous_count: 2000 },
     ],
     total: 7,
   },
@@ -32,6 +32,7 @@ const DEFAULT_MOCK: StatsApiResponse = {
   hourly_stats: [
     { hour: 9, anomalous_count: 1 },
     { hour: 12, anomalous_count: 2 },
+    { hour: 22, anomalous_count: 2000 },
   ],
   total: 3,
 };

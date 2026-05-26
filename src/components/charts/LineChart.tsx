@@ -31,7 +31,7 @@ function LineChartInner({
 
     const { innerWidth, innerHeight, xPositions, barWidth } = dimensions;
     const yScale = createYScale(data, innerHeight, logScale);
-    const yTickValues = getYTickValues(data, logScale);
+    const yTickValues = getYTickValues(data, innerHeight, logScale);
 
     const line = d3
       .line<HourlyStatDto>()

@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import type { Selection } from 'd3';
 import type { HourlyStatDto } from '@/types/stats';
 import { GRID_COLOR } from './chartConfig';
+import { formatYTick } from './chartScales';
 
 type GroupSelection = Selection<SVGGElement, unknown, null, undefined>;
 
@@ -34,7 +35,7 @@ export function drawYAxis(
       d3
         .axisLeft(yScale)
         .tickValues(tickValues)
-        .tickFormat((value) => d3.format('.1f')(Number(value))),
+        .tickFormat(formatYTick),
     )
     .selectAll('text')
     .attr('font-size', 12);

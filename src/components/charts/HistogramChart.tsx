@@ -32,7 +32,7 @@ function HistogramChartInner({
 
     const { innerWidth, innerHeight, xPositions, barWidth, barTopRadius } = dimensions;
     const yScale = createYScale(data, innerHeight, logScale);
-    const yTickValues = getYTickValues(data, logScale);
+    const yTickValues = getYTickValues(data, innerHeight, logScale);
 
     const g = d3.select(gRef.current);
     g.selectAll('*').remove();

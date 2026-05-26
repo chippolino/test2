@@ -46,19 +46,48 @@ export function getBarLayout(barCount: number, targetInnerWidth: number): BarLay
   };
 }
 
-export function getYTickValues(data: HourlyStatDto[], logScale: boolean): number[] {
+const MIN_TICK_PIXELS = 40;
+const MAX_Y_TICKS = 8;
+/** При max ≤ этого порога — шаг 1 (0, 1, 2, …) */
+const INTEGER_STEP_THRESHOLD = 12;
+
+export function formatYTick(value: d3.NumberValue): string {
+  const num = Number(value);
+  if (!Number.isFinite(num)) {
+    return '';
+  }
+  if (Number.isInteger(num)) {
+    return String(num);
+  }
+  return d3.format('.1f')(num);
+}
+
+export function getYTickValues(
+  data: HourlyStatDto[],
+  innerHeight: number,
+  logScale: boolean,
+): number[] {
   const maxCount = d3.max(data, (d) => d.anomalous_count) ?? 0;
-  const top = Math.max(Math.ceil(maxCount), 1);
+  const domainMax = Math.max(Math.ceil(maxCount), 1);
+  const tickCount = Math.max(2, Math.min(MAX_Y_TICKS, Math.floor(innerHeight / MIN_TICK_PIXELS)));
 
   if (logScale) {
-    const ticks: number[] = [];
-    for (let value = 0; value <= top; value += 1) {
-      ticks.push(value);
-    }
-    return ticks;
+    const scale = d3.scaleSymlog().domain([0, domainMax]).range([innerHeight, 0]);
+    return scale.ticks(tickCount);
   }
 
-  return d3.range(0, top + 1, 1);
+  if (domainMax <= INTEGER_STEP_THRESHOLD) {
+    return d3.range(0, domainMax + 1, 1);
+  }
+
+  const scale = d3.scaleLinear().domain([0, domainMax]).range([innerHeight, 0]);
+  const ticks = scale.ticks(tickCount);
+
+  if (ticks[0] !== 0) {
+    return [0, ...ticks];
+  }
+
+  return ticks;
 }
 
 export function createYScale(
