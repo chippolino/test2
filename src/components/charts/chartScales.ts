@@ -48,40 +48,79 @@ export function getBarLayout(barCount: number, targetInnerWidth: number): BarLay
 
 const MIN_TICK_PIXELS = 40;
 const MAX_Y_TICKS = 8;
-/** При max ≤ этого порога — шаг 1 (0, 1, 2, …) */
 const INTEGER_STEP_THRESHOLD = 12;
 
-export function formatYTick(value: d3.NumberValue): string {
+export function formatYTick(value: d3.NumberValue, logScale = false): string {
   const num = Number(value);
   if (!Number.isFinite(num)) {
     return '';
   }
+
+  if (logScale) {
+    if (num === 0) {
+      return '0';
+    }
+    if (num >= 1000) {
+      return d3.format('~s')(num);
+    }
+    if (num >= 10) {
+      return String(Math.round(num));
+    }
+    if (num >= 1) {
+      return d3.format('.0f')(num);
+    }
+    return d3.format('.2f')(num);
+  }
+
   if (Number.isInteger(num)) {
     return String(num);
   }
+
   return d3.format('.1f')(num);
+}
+
+/** Равномерные горизонтальные линии в пикселях для лог-шкалы */
+function getLogScaleTickValues(
+  yScale: d3.ScaleContinuousNumeric<number, number>,
+  innerHeight: number,
+  tickCount: number,
+): number[] {
+  const values = Array.from({ length: tickCount + 1 }, (_, index) => {
+    const y = innerHeight - (index / tickCount) * innerHeight;
+    return yScale.invert(y);
+  });
+
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = formatYTick(value, true);
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
 export function getYTickValues(
   data: HourlyStatDto[],
   innerHeight: number,
   logScale: boolean,
+  yScale: d3.ScaleContinuousNumeric<number, number>,
 ): number[] {
   const maxCount = d3.max(data, (d) => d.anomalous_count) ?? 0;
   const domainMax = Math.max(Math.ceil(maxCount), 1);
   const tickCount = Math.max(2, Math.min(MAX_Y_TICKS, Math.floor(innerHeight / MIN_TICK_PIXELS)));
 
   if (logScale) {
-    const scale = d3.scaleSymlog().domain([0, domainMax]).range([innerHeight, 0]);
-    return scale.ticks(tickCount);
+    return getLogScaleTickValues(yScale, innerHeight, tickCount);
   }
 
   if (domainMax <= INTEGER_STEP_THRESHOLD) {
     return d3.range(0, domainMax + 1, 1);
   }
 
-  const scale = d3.scaleLinear().domain([0, domainMax]).range([innerHeight, 0]);
-  const ticks = scale.ticks(tickCount);
+  const linearScale = d3.scaleLinear().domain([0, domainMax]).range([innerHeight, 0]);
+  const ticks = linearScale.ticks(tickCount);
 
   if (ticks[0] !== 0) {
     return [0, ...ticks];
@@ -99,7 +138,11 @@ export function createYScale(
   const domainMax = Math.max(Math.ceil(maxCount), 1);
 
   if (logScale) {
-    return d3.scaleSymlog().domain([0, domainMax]).range([innerHeight, 0]);
+    return d3
+      .scaleSymlog()
+      .constant(1)
+      .domain([0, domainMax])
+      .range([innerHeight, 0]);
   }
 
   return d3.scaleLinear().domain([0, domainMax]).range([innerHeight, 0]);
