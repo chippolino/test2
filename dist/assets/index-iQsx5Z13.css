@@ -1,0 +1,1 @@
+.stats-page{display:flex;gap:14px;width:100%;align-items:flex-start}.stats-aside{flex:0 0 295px;width:295px}.stats-chart-area{flex:1 1 auto;width:0;min-width:1024px}.chart-container{box-sizing:border-box;width:100%;padding:16px;border:1px solid #d9d9d9;border-radius:4px;background:#fff}.chart-container svg{display:block}
